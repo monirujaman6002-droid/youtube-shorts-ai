@@ -1,0 +1,5 @@
+streamlit
+yt-dlp
+youtube-transcript-api
+google-generativeai
+moviepy<2.0
