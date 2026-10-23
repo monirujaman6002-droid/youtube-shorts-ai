@@ -11,7 +11,6 @@ st.set_page_config(page_title="AI YouTube Shorts Maker", page_icon="🎬", layou
 st.title("🎬 AI YouTube Shorts Maker")
 st.write("যেকোনো বড় ইউটিউব ভিডিওর লিংক দিন, AI অটোমেটিক সেরা অংশ খুঁজে 9:16 শর্টস বানিয়ে দেবে!")
 
-# ইনপুট ফিল্ড
 api_key = st.text_input("🔑 আপনার Gemini API Key দিন", type="password")
 youtube_url = st.text_input("🔗 YouTube Video Link পেস্ট করুন", placeholder="https://www.youtube.com/watch?v=...")
 
@@ -33,16 +32,17 @@ if st.button("🚀 ভাইরাল শর্টস তৈরি করুন"
                 genai.configure(api_key=api_key.strip())
                 video_id = extract_video_id(youtube_url)
                 
-                # ১. ক্যাপশন বা ট্রান্সক্রিপ্ট নেওয়া
+                # নতুন নিয়মে সাবটাইটেল ফেচ করা
                 try:
+                    fetched_data = YouTubeTranscriptApi.fetch(video_id)
+                    transcript = [{'start': snippet.start, 'text': snippet.text} for snippet in fetched_data]
+                except Exception:
+                    # যদি আগের নিয়মে কাজ করে
                     transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
                     transcript = transcript_list.find_transcript(['en', 'bn', 'hi', 'es', 'ar']).fetch()
-                except Exception:
-                    transcript = YouTubeTranscriptApi.get_transcript(video_id)
                     
                 formatted_text = "\n".join([f"[{round(item['start'], 2)}s] {item['text']}" for item in transcript])
                 
-                # ২. Gemini AI দিয়ে সেরা অংশ খোঁজা
                 model = genai.GenerativeModel("gemini-2.5-flash")
                 prompt = f"""
                 You are an expert short-form video editor like OpusClip. 
@@ -65,7 +65,6 @@ if st.button("🚀 ভাইরাল শর্টস তৈরি করুন"
                 st.success(f"🎬 **টাইটেল:** {clip_data.get('title')}")
                 st.info(f"🔥 ভাইরালিটি স্কোর: {clip_data.get('score')}/100 | সময়: {start_t}s থেকে {end_t}s")
 
-                # ৩. ভিডিও ডাউনলোড ও কাটা
                 input_video_path = "downloaded_video.mp4"
                 if os.path.exists(input_video_path):
                     os.remove(input_video_path)
@@ -100,7 +99,6 @@ if st.button("🚀 ভাইরাল শর্টস তৈরি করুন"
                         output_path, codec="libx264", audio_codec="aac", preset="ultrafast", logger=None
                     )
                 
-                # ৪. সাইটে ভিডিও দেখানো ও ডাউনলোডের ব্যবস্থা
                 st.video(output_path)
                 with open(output_path, "rb") as file:
                     st.download_button(
@@ -111,4 +109,4 @@ if st.button("🚀 ভাইরাল শর্টস তৈরি করুন"
                     )
             except Exception as e:
                 st.error(f"⚠️ ত্রুটি ঘটেছে: {str(e)}")
-                  
+            
